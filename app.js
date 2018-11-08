@@ -20,6 +20,15 @@ const shopRoutes = require("./routes/shop");
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, "public")));
 
+app.use((req, res, next) => {
+	User.findByPk(1)
+		.then(user => {
+			req.user = user;
+			next();
+		})
+		.catch(err => console.log(err));
+});
+
 app.use("/admin", adminRoutes);
 app.use(shopRoutes);
 
@@ -29,9 +38,24 @@ Product.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
 User.hasMany(Product);
 
 sequelize
-	.sync({ force: true })
+	// .sync({ force: true })
+	.sync()
 	.then(result => {
+		return User.findByPk(1);
 		// console.log(result);
+	})
+	//We can chain then because we returned User.findByID which returns a promise
+	.then(user => {
+		if (!user) {
+			return User.create({ name: "Sahil", email: "text@test.com" });
+		}
+		//We returned a promise to by consistent with the if block in order to chain then
+		// return Promise.resolve(user);
+		//This statment is equivalent to the above one because returning inside a then block will always return a promise
+		return user;
+	})
+	//We can chain then because we returned User.findByID which returns a promise
+	.then(user => {
 		app.listen(3000);
 	})
 	.catch(err => {
